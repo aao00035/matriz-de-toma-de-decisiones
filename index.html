@@ -1,359 +1,256 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Herramienta Integral de Decisiones</title>
-  <style>
-    :root {
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --bg: #f1f5f9;
-      --card: #ffffff;
-      --text: #1e293b;
-      --muted: #64748b;
-      --border: #cbd5e1;
-      --winner-bg: #dcfce7;
-      --winner-text: #166534;
-    }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      margin: 0;
-      padding: 20px;
-      line-height: 1.5;
-    }
-    .container {
-      max-width: 1000px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
-    .card {
-      background: var(--card);
-      padding: 24px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    }
-    h1 { margin: 0 0 8px 0; font-size: 1.6rem; color: #0f172a; }
-    h2 { margin: 0 0 12px 0; font-size: 1.2rem; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; }
-    p.subtitle { color: var(--muted); font-size: 0.95rem; margin: 0 0 16px 0; }
-    
-    input[type="text"], textarea {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 10px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      font-size: 0.95rem;
-      font-family: inherit;
-    }
-    textarea { resize: vertical; min-height: 70px; }
-
-    button {
-      background-color: var(--primary);
-      color: white;
-      border: none;
-      padding: 8px 14px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 500;
-      font-size: 0.9rem;
-    }
-    button:hover { background-color: var(--primary-hover); }
-    button.secondary { background-color: #e2e8f0; color: #334155; }
-    button.secondary:hover { background-color: #cbd5e1; }
-    button.danger { background: transparent; color: #ef4444; padding: 4px 8px; font-size: 0.85rem; }
-    button.danger:hover { background: #fee2e2; }
-
-    /* 1. Reversibilidad e Impacto */
-    .rev-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 16px;
-    }
-    .rev-box {
-      padding: 16px;
-      border-radius: 8px;
-      border: 2px solid var(--border);
-      cursor: pointer;
-      transition: all 0.2s;
-      background: #f8fafc;
-      user-select: none;
-    }
-    .rev-box:hover {
-      border-color: #93c5fd;
-    }
-    .rev-box.active {
-      border-color: var(--primary);
-      background: #eff6ff;
-      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
-    }
-    .rev-box strong { display: block; font-size: 1rem; margin-bottom: 4px; color: #0f172a; }
-    .rev-box span { font-size: 0.85rem; color: var(--muted); }
-    .rev-result {
-      padding: 14px;
-      border-radius: 8px;
-      background: #f8fafc;
-      border-left: 4px solid var(--primary);
-      font-size: 0.95rem;
-    }
-
-    /* 2. Matriz Eisenhower */
-    .eisenhower-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-    .quadrant {
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .q1 { background-color: #fef2f2; border-color: #fecaca; }
-    .q2 { background-color: #eff6ff; border-color: #bfdbfe; }
-    .q3 { background-color: #fefce8; border-color: #fef08a; }
-    .q4 { background-color: #f8fafc; border-color: #e2e8f0; }
-    .quadrant h3 { margin: 0; font-size: 0.95rem; }
-    .quadrant small { color: var(--muted); font-size: 0.8rem; display: block; margin-bottom: 4px; }
-    .quadrant textarea { background: rgba(255, 255, 255, 0.85); }
-
-    /* 3. Pros y Contras */
-    .pros-cons-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-    .pc-col { background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid var(--border); }
-    .pc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .pc-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
-    .pc-item { display: flex; gap: 8px; align-items: center; }
-
-    /* 4. Matriz Ponderada */
-    .controls { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-    .table-wrapper { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-    th, td { border: 1px solid var(--border); padding: 10px; text-align: center; }
-    th { background-color: #f1f5f9; font-weight: 600; }
-    table input[type="text"] { text-align: center; font-weight: 600; padding: 6px; }
-    table input[type="number"] { width: 65px; padding: 6px; border: 1px solid var(--border); border-radius: 4px; text-align: center; }
-    .total-row td { font-weight: bold; font-size: 1.05rem; background-color: #f8fafc; }
-    .winner-cell { background-color: var(--winner-bg) !important; color: var(--winner-text); }
-    .winner-banner {
-      padding: 14px;
-      background-color: var(--winner-bg);
-      color: var(--winner-text);
-      border-radius: 8px;
-      font-weight: 600;
-      text-align: center;
-    }
-
-    @media (max-width: 700px) {
-      .rev-grid, .eisenhower-grid, .pros-cons-grid { grid-template-columns: 1fr; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laboratorio de Toma de Decisiones</title>
+<style>
+:root{--bg:#eef2f3;--card:#fff;--text:#17212b;--muted:#5b6b7a;--border:#cfd8dc;--accent:#0e7490;--on:#fff;--soft:#e0f2f7;--ok:#15803d;--bad:#be123c;--q1:#fde8ec;--q2:#e0f2f7;--q3:#fdf3d6;--q4:#e8edf0}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1620;--card:#18232f;--text:#e6edf3;--muted:#95a5b3;--border:#344556;--accent:#5cc8e0;--on:#0e1620;--soft:#16384a;--ok:#4ade80;--bad:#fb7185;--q1:#3c1f28;--q2:#16384a;--q3:#3a3318;--q4:#243240}}
+*{box-sizing:border-box}
+body{margin:0;padding:16px;background:var(--bg);color:var(--text);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:960px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px}
+h1,h2,h3{font-family:Georgia,"Times New Roman",serif;margin:0 0 8px;line-height:1.25}
+h1{font-size:1.7rem}h2{font-size:1.3rem}h3{font-size:1.05rem}
+.muted{color:var(--muted);font-size:.93rem;margin:0 0 14px}
+input[type=text],textarea,select{width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font:inherit}
+textarea{min-height:84px;resize:vertical}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button{font:inherit;cursor:pointer;border-radius:6px}
+.btn{background:var(--accent);color:var(--on);border:1px solid var(--accent);padding:9px 16px;font-weight:600}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.ghost{background:transparent;color:var(--text);border-color:var(--border)}
+.x{background:transparent;border:0;color:var(--bad);padding:6px 10px;font-size:1rem}
+#stepper{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-top:14px}
+.step{flex:1;min-width:104px;background:transparent;border:1px solid var(--border);color:var(--text);padding:8px 10px;text-align:left}
+.step small{display:block;color:var(--muted);font-size:.75rem}
+.step.done{border-color:var(--ok)}
+.step.on{background:var(--accent);color:var(--on);border-color:var(--accent)}
+.step.on small{color:var(--on)}
+.bar{height:6px;background:var(--border);border-radius:3px;margin-top:10px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.panel{display:none}.panel.on{display:block}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.risk{text-align:left;background:transparent;color:var(--text);border:2px solid var(--border);padding:14px}
+.risk span{display:block;color:var(--muted);font-size:.85rem}
+.risk.on{border-color:var(--accent);background:var(--soft)}
+#advice{margin-top:14px;padding:12px 14px;border-left:4px solid var(--accent);background:var(--soft);border-radius:0 6px 6px 0}
+.quad{border:1px solid var(--border);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.quad small{color:var(--muted)}
+.quad textarea{background:rgba(255,255,255,.55);color:#17212b}
+@media(prefers-color-scheme:dark){.quad textarea{background:rgba(0,0,0,.25);color:var(--text)}}
+.q0{background:var(--q1)}.q1{background:var(--q2)}.q2{background:var(--q3)}.q3{background:var(--q4)}
+.col{border:1px solid var(--border);border-radius:8px;padding:14px}
+.col ul{list-style:none;margin:10px 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.col li{display:flex;gap:6px;align-items:center}
+.col li select{width:64px;flex:none}
+.hd{display:flex;justify-content:space-between;align-items:center}
+.pros h3{color:var(--ok)}.cons h3{color:var(--bad)}
+.nav{display:flex;justify-content:space-between;gap:10px}
+.flow{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0 22px}
+.node{flex:1;min-width:140px;padding:10px 12px;border:2px dashed var(--border);border-radius:8px;position:relative}
+.node.done{border:2px solid var(--ok)}
+.node b{display:block;font-size:.85rem;color:var(--muted)}
+.node span{overflow-wrap:anywhere}
+.scale{display:flex;height:34px;border-radius:8px;overflow:hidden;background:var(--border);margin:8px 0}
+.scale div{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:.9rem;transition:width .4s}
+.scale .p{background:#15803d}.scale .c{background:#be123c}
+.chip{display:inline-block;margin:3px 4px 3px 0;padding:3px 11px;border-radius:999px;background:rgba(128,128,128,.2);font-size:.88rem}
+.hist{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.hist li{display:flex;gap:8px;align-items:center;justify-content:space-between;border:1px solid var(--border);border-radius:8px;padding:8px 12px}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.sec{margin-top:22px}
+@media(max-width:700px){.g2{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
 </head>
 <body>
+<div class="wrap">
 
-<div class="container">
+<header class="card">
+  <h1>Laboratorio de toma de decisiones</h1>
+  <p class="muted">Recorre las cuatro etapas y mira al final tu proceso completo en un mapa visual. Tus respuestas se guardan solas en este navegador.</p>
+  <nav id="stepper" aria-label="Etapas"></nav>
+  <div class="bar"><i id="prog"></i></div>
+</header>
 
-  <div class="card">
-    <h1>Laboratorio de Toma de Decisiones</h1>
-    <p class="subtitle">Describe tu situación o ejemplo abajo y utiliza las matrices para analizar el riesgo, la prioridad y la mejor opción.</p>
-    <label for="decisionContext"><strong>¿Qué decisión o ejemplo vas a evaluar hoy?</strong></label>
-    <textarea id="decisionContext" placeholder="Ej: Cambiar de trabajo a una startup con mejor sueldo pero menos estabilidad, o quedarme en mi empresa actual..."></textarea>
-  </div>
+<main class="card">
 
-  <div class="card">
-    <h2>1. Clasificación de Riesgo (Reversibilidad e Impacto)</h2>
-    <p class="subtitle">Haz clic en el cuadrante que mejor encaje con tu situación:</p>
-    
-    <div class="rev-grid">
-      <div class="rev-box active" onclick="selectRisk(0, this)">
-        <strong>Reversible + Bajo Impacto</strong>
-        <span>Se puede deshacer fácilmente y no afecta mucho si sale mal.</span>
-      </div>
-      <div class="rev-box" onclick="selectRisk(1, this)">
-        <strong>Reversible + Alto Impacto</strong>
-        <span>Tiene grandes consecuencias, pero existe marcha atrás o plan B.</span>
-      </div>
-      <div class="rev-box" onclick="selectRisk(2, this)">
-        <strong>Irreversible + Bajo Impacto</strong>
-        <span>No tiene vuelta atrás, pero el efecto a largo plazo es menor.</span>
-      </div>
-      <div class="rev-box" onclick="selectRisk(3, this)">
-        <strong>Irreversible + Alto Impacto</strong>
-        <span>Decisión definitiva con consecuencias profundas (puerta de un solo sentido).</span>
-      </div>
+  <section class="panel" id="p0">
+    <h2>Describe tu decisión</h2>
+    <p class="muted">Ponle un nombre corto y cuenta el contexto con tus palabras.</p>
+    <label for="title"><strong>¿Qué vas a decidir?</strong></label>
+    <input type="text" id="title" placeholder="Ej: Cambiar a una startup con mejor sueldo" oninput="S.title=this.value;save()">
+    <p></p>
+    <label for="ctx"><strong>Contexto</strong></label>
+    <textarea id="ctx" placeholder="Qué opciones tienes, qué te preocupa, qué plazo tienes…" oninput="S.context=this.value;save()"></textarea>
+  </section>
+
+  <section class="panel" id="p1">
+    <h2>¿Qué tan difícil es dar marcha atrás?</h2>
+    <p class="muted">Elige el recuadro que mejor describe tu decisión.</p>
+    <div class="g2" id="risks"></div>
+    <div id="advice">Elige un recuadro para ver una recomendación.</div>
+  </section>
+
+  <section class="panel" id="p2">
+    <h2>¿Qué es urgente y qué es importante?</h2>
+    <p class="muted">Escribe un factor por línea dentro del recuadro que le corresponda.</p>
+    <div class="g2" id="quads"></div>
+  </section>
+
+  <section class="panel" id="p3">
+    <h2>Pros y contras</h2>
+    <p class="muted">Anota cada argumento y dale un peso del 1 (leve) al 5 (clave).</p>
+    <div class="g2">
+      <div class="col pros"><div class="hd"><h3>A favor</h3><button class="btn ghost" onclick="add('pros')">Añadir pro</button></div><ul id="pros"></ul></div>
+      <div class="col cons"><div class="hd"><h3>En contra</h3><button class="btn ghost" onclick="add('cons')">Añadir contra</button></div><ul id="cons"></ul></div>
     </div>
+  </section>
 
-    <div id="riskAdvice" class="rev-result">
-      <strong>Recomendación (Reversible + Bajo Impacto):</strong> Decide rápido y experimenta. No pierdas tiempo analizando de más; si no funciona, simplemente das marcha atrás.
+  <section class="panel" id="p4">
+    <h2 id="sumTitle">Tu proceso completo</h2>
+    <p class="muted" id="sumCtx"></p>
+    <h3>Recorrido</h3>
+    <div class="flow" id="flow"></div>
+    <h3>Balanza de pros y contras</h3>
+    <div id="balance"></div>
+    <div class="sec"><h3>Prioridades</h3><div class="g2" id="matrix"></div></div>
+    <div class="sec">
+      <label for="final"><strong>Mi decisión final y primer paso</strong></label>
+      <textarea id="final" placeholder="Qué decides y qué harás primero…" oninput="S.final=this.value;save();flow()"></textarea>
     </div>
-  </div>
-
-  <div class="card">
-    <h2>2. Matriz de Prioridad (Urgente vs. Importante)</h2>
-    <p class="subtitle">Escribe dentro de cada recuadro los factores o tareas de tu decisión según su prioridad:</p>
-    
-    <div class="eisenhower-grid">
-      <div class="quadrant q1">
-        <h3>Urgente e Importante (HACER YA)</h3>
-        <small>Crisis, plazos límite inmediatos, problemas críticos.</small>
-        <textarea placeholder="Escribe aquí lo que requiere acción inmediata..."></textarea>
-      </div>
-      <div class="quadrant q2">
-        <h3>No Urgente e Importante (PLANIFICAR)</h3>
-        <small>Estrategia, metas a largo plazo, prevención, crecimiento.</small>
-        <textarea placeholder="Escribe aquí lo que aporta más valor a futuro..."></textarea>
-      </div>
-      <div class="quadrant q3">
-        <h3>Urgente y No Importante (DELEGAR)</h3>
-        <small>Interrupciones, trámites menores, peticiones de otros.</small>
-        <textarea placeholder="Escribe aquí lo que puedes delegar o resolver rápido..."></textarea>
-      </div>
-      <div class="quadrant q4">
-        <h3>No Urgente y No Importante (ELIMINAR)</h3>
-        <small>Distracciones, ruido, preocupaciones innecesarias.</small>
-        <textarea placeholder="Escribe aquí lo que debes descartar..."></textarea>
-      </div>
+    <div class="row">
+      <button class="btn" onclick="commit()">Guardar decisión</button>
+      <button class="btn ghost" onclick="fresh()">Nueva decisión</button>
+      <button class="btn ghost" onclick="exp()">Exportar</button>
+      <button class="btn ghost" onclick="document.getElementById('imp').click()">Importar</button>
+      <input type="file" id="imp" accept="application/json" hidden onchange="imp(this)">
     </div>
+    <div class="sec"><h3>Decisiones guardadas</h3><ul class="hist" id="hist"></ul></div>
+  </section>
+
+  <div class="nav" style="margin-top:20px">
+    <button class="btn ghost" id="prev" onclick="go(step-1)">Anterior</button>
+    <button class="btn" id="next" onclick="go(step+1)">Siguiente</button>
   </div>
+</main>
 
-  <div class="card">
-    <h2>3. Balance de Pros y Contras</h2>
-    <p class="subtitle">Anota los argumentos a favor y en contra de tu decisión principal:</p>
-    
-    <div class="pros-cons-grid">
-      <div class="pc-col">
-        <div class="pc-header">
-          <strong style="color: #166534;">✅ Pros (A favor)</strong>
-          <button type="button" onclick="addProCon('prosList', 'Ventaja...')">+ Añadir</button>
-        </div>
-        <ul id="prosList" class="pc-list">
-          <li class="pc-item"><input type="text" placeholder="Ej: Mayor crecimiento profesional"><button type="button" class="danger" onclick="this.parentElement.remove()">✕</button></li>
-        </ul>
-      </div>
+<p class="muted">Los datos viven en el navegador de cada persona (localStorage). Usa Exportar para llevarte tus decisiones a otro dispositivo.</p>
+</div>
 
-      <div class="pc-col">
-        <div class="pc-header">
-          <strong style="color: #991b1b;">❌ Contras (En contra)</strong>
-          <button type="button" onclick="addProCon('consList', 'Desventaja...')">+ Añadir</button>
-        </div>
-        <ul id="consList" class="pc-list">
-          <li class="pc-item"><input type="text" placeholder="Ej: Mayor carga de horas"><button type="button" class="danger" onclick="this.parentElement.remove()">✕</button></li>
-        </ul>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <h2>4. Matriz Comparativa Ponderada</h2>
-    <p class="subtitle">Compara tus alternativas puntuando cada criterio del 1 al 10 según su peso (importancia):</p>
-
-    <div class="controls">
-Usa el código con precaución.
-+ Añadir Opción
-+ Añadir Criterio
-Poner puntuaciones a 0
-const riskMessages = [
-"Recomendación (Reversible + Bajo Impacto): Decide rápido y experimenta. No pierdas tiempo analizando de más; si no funciona, simplemente das marcha atrás.",
-"Recomendación (Reversible + Alto Impacto): Haz una prueba piloto o define un límite de tiempo/dinero para evaluar resultados antes de comprometerte al 100%.",
-"Recomendación (Irreversible + Bajo Impacto): Toma una decisión firme y sigue adelante sin mirar atrás. El coste de dudar es mayor que el impacto de equivocarse.",
-"Recomendación (Irreversible + Alto Impacto): Tómate tu tiempo, recopila datos, consulta opiniones externas y usa la Matriz Comparativa de abajo antes de dar el paso."
+<script>
+const STEPS=['Decisión','Riesgo','Prioridad','Balance','Resumen'];
+const RISKS=[
+ {n:'Reversible y bajo impacto',d:'Se deshace fácil y casi no afecta si sale mal.',t:'Decide rápido y experimenta. Si no funciona, das marcha atrás.'},
+ {n:'Reversible y alto impacto',d:'Grandes consecuencias, pero hay plan B.',t:'Haz una prueba piloto o fija un límite de tiempo y dinero antes de comprometerte del todo.'},
+ {n:'Irreversible y bajo impacto',d:'Sin vuelta atrás, pero el efecto es menor.',t:'Decide con firmeza y sigue adelante. Dudar cuesta más que equivocarse.'},
+ {n:'Irreversible y alto impacto',d:'Decisión definitiva con consecuencias profundas.',t:'Tómate tu tiempo, reúne datos y consulta a otras personas antes de dar el paso.'}
 ];
-function selectRisk(index, element) {
-document.querySelectorAll('.rev-box').forEach(box => box.classList.remove('active'));
-element.classList.add('active');
-document.getElementById('riskAdvice').innerHTML = riskMessages[index];
-}
-function addProCon(listId, placeholder) {
-const ul = document.getElementById(listId);
-const li = document.createElement('li');
-li.className = 'pc-item';
-li.innerHTML = <input type="text" placeholder="${placeholder}"><button type="button" class="danger" onclick="this.parentElement.remove()">✕</button>;
-ul.appendChild(li);
-}
-let options = ["Opción A", "Opción B"];
-let criteria = [
-{ name: "Beneficio / Retorno", weight: 9, scores: [7, 5] },
-{ name: "Coste / Esfuerzo", weight: 7, scores: [6, 8] },
-{ name: "Alineación con mis metas", weight: 8, scores: [8, 6] }
+const QUADS=[
+ ['Urgente e importante','Hacer ya: crisis y plazos inmediatos.'],
+ ['Importante, no urgente','Planificar: metas y crecimiento a largo plazo.'],
+ ['Urgente, no importante','Delegar: interrupciones y trámites menores.'],
+ ['Ni urgente ni importante','Eliminar: ruido y distracciones.']
 ];
-function render() {
-const thead = document.getElementById("tableHead");
-const tbody = document.getElementById("tableBody");
-const tfoot = document.getElementById("tableFoot");
-let headHTML = <tr><th style="min-width: 180px;">Criterios</th><th style="width: 90px;">Peso (1-10)</th>;
-options.forEach((opt, optIndex) => {
-headHTML += `
-`;
-});
-headHTML += </tr>;
-thead.innerHTML = headHTML;
-let bodyHTML = "";
-criteria.forEach((crit, critIndex) => {
-bodyHTML += `
-`;
-options.forEach((_, optIndex) => {
-const score = crit.scores[optIndex] || 0;
-bodyHTML += `
-`;
-});
-bodyHTML += </tr>;
-});
-tbody.innerHTML = bodyHTML;
-let totals = options.map((_, optIndex) => {
-return criteria.reduce((sum, crit) => sum + (crit.weight * (crit.scores[optIndex] || 0)), 0);
-});
-const maxScore = Math.max(...totals);
-let footHTML = <tr class="total-row"><td colspan="2">PUNTUACIÓN TOTAL</td>;
-totals.forEach((total) => {
-const isWinner = total === maxScore && maxScore > 0;
-footHTML += <td class="${isWinner ? 'winner-cell' : ''}">${total} pts</td>;
-});
-footHTML += </tr>;
-tfoot.innerHTML = footHTML;
-const banner = document.getElementById("winnerBanner");
-if (maxScore === 0) {
-banner.textContent = "Introduce puntuaciones para ver la opción ganadora.";
-} else {
-const winners = options.filter((_, idx) => totals[idx] === maxScore);
-banner.textContent = winners.length > 1
-? Empate en primer lugar: ${winners.join(" y ")} (${maxScore} puntos)
-: Mejor opción según tus criterios: ${winners[0]} (${maxScore} puntos);
+const blank=()=>({id:Date.now().toString(36),title:'',context:'',risk:null,q:['','','',''],pros:[{t:'',w:3}],cons:[{t:'',w:3}],final:'',date:''});
+function ls(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem(k));localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let S=ls('dt:draft')||blank(), hist=ls('dt:hist')||[], step=0;
+
+function done(){return[S.title.trim()!=='',S.risk!==null,S.q.some(x=>x.trim()),S.pros.concat(S.cons).some(i=>i.t.trim())]}
+function save(){ls('dt:draft',S);bar()}
+function bar(){
+  const d=done();
+  $('stepper').innerHTML=STEPS.map((n,i)=>`<button class="step${i===step?' on':''}${d[i]?' done':''}" onclick="go(${i})">${i+1}. ${n}<small>${i<4?(d[i]?'Completo':'Pendiente'):'Vista final'}</small></button>`).join('');
+  $('prog').style.width=(d.filter(Boolean).length/4*100)+'%';
 }
+function go(n){
+  step=Math.max(0,Math.min(4,n));
+  document.querySelectorAll('.panel').forEach((p,i)=>p.classList.toggle('on',i===step));
+  $('prev').disabled=step===0;$('next').disabled=step===4;
+  if(step===4)summary();
+  bar();window.scrollTo({top:0});
 }
-function updateOptionName(index, val) { options[index] = val; render(); }
-function updateCriterionName(index, val) { criteria[index].name = val; }
-function updateWeight(index, val) { criteria[index].weight = Math.max(0, Number(val)); render(); }
-function updateScore(critIndex, optIndex, val) { criteria[critIndex].scores[optIndex] = Math.max(0, Number(val)); render(); }
-function addOption() {
-options.push(Opción ${String.fromCharCode(65 + options.length)});
-criteria.forEach(c => c.scores.push(5));
-render();
+function risks(){
+  $('risks').innerHTML=RISKS.map((r,i)=>`<button class="risk${S.risk===i?' on':''}" onclick="S.risk=${i};save();risks()"><strong>${r.n}</strong><span>${r.d}</span></button>`).join('');
+  $('advice').innerHTML=S.risk===null?'Elige un recuadro para ver una recomendación.':`<strong>${RISKS[S.risk].n}:</strong> ${RISKS[S.risk].t}`;
 }
-function removeOption(index) {
-options.splice(index, 1);
-criteria.forEach(c => c.scores.splice(index, 1));
-render();
+function quads(){
+  $('quads').innerHTML=QUADS.map((q,i)=>`<div class="quad q${i}"><h3>${q[0]}</h3><small>${q[1]}</small><textarea aria-label="${q[0]}" oninput="S.q[${i}]=this.value;save()">${esc(S.q[i])}</textarea></div>`).join('');
 }
-function addCriterion() {
-criteria.push({ name: Criterio ${criteria.length + 1}, weight: 5, scores: options.map(() => 5) });
-render();
+function lists(){
+  ['pros','cons'].forEach(k=>{
+    $(k).innerHTML=S[k].map((it,n)=>`<li><input type="text" aria-label="Argumento" value="${esc(it.t)}" placeholder="${k==='pros'?'Ej: Más crecimiento profesional':'Ej: Menos estabilidad'}" oninput="S.${k}[${n}].t=this.value;save()"><select aria-label="Peso" onchange="S.${k}[${n}].w=+this.value;save()">${[1,2,3,4,5].map(w=>`<option${it.w===w?' selected':''}>${w}</option>`).join('')}</select><button class="x" aria-label="Quitar" onclick="rm('${k}',${n})">✕</button></li>`).join('');
+  });
 }
-function removeCriterion(index) {
-criteria.splice(index, 1);
-render();
+function add(k){S[k].push({t:'',w:3});save();lists()}
+function rm(k,n){S[k].splice(n,1);if(!S[k].length)S[k].push({t:'',w:3});save();lists()}
+function sums(){
+  const f=a=>a.filter(i=>i.t.trim());
+  const P=f(S.pros),C=f(S.cons);
+  return{P:P.reduce((s,i)=>s+i.w,0),C:C.reduce((s,i)=>s+i.w,0),np:P.length,nc:C.length};
 }
-function resetMatrix() {
-criteria.forEach(c => { c.scores = options.map(() => 0); });
-render();
+function flow(){
+  const d=done(),s=sums(),q=S.q.reduce((n,x)=>n+x.split('\n').filter(l=>l.trim()).length,0);
+  const nodes=[
+   ['Decisión',S.title.trim()||'Sin nombre',d[0]],
+   ['Riesgo',S.risk===null?'Sin elegir':RISKS[S.risk].n,d[1]],
+   ['Prioridad',q?q+' factores ordenados':'Vacío',d[2]],
+   ['Balance',s.np+' pros y '+s.nc+' contras',d[3]],
+   ['Decisión final',S.final.trim()?'Definida':'Pendiente',S.final.trim()!=='']
+  ];
+  $('flow').innerHTML=nodes.map(n=>`<div class="node${n[2]?' done':''}"><b>${n[2]?'✓ ':''}${n[0]}</b><span>${esc(n[1])}</span></div>`).join('');
 }
-render();
+function summary(){
+  $('sumTitle').textContent=S.title.trim()||'Tu proceso completo';
+  $('sumCtx').textContent=S.context.trim();
+  $('final').value=S.final;
+  flow();
+  const s=sums(),t=s.P+s.C;
+  if(!t){$('balance').innerHTML='<p class="muted">Añade pros y contras en la etapa 4 para ver la balanza.</p>'}
+  else{
+    const pp=Math.round(s.P/t*100);
+    const v=s.P>s.C?'La balanza se inclina a favor.':s.P<s.C?'La balanza se inclina en contra.':'Los argumentos están empatados.';
+    $('balance').innerHTML=`<div class="scale" role="img" aria-label="${pp}% a favor"><div class="p" style="width:${pp}%">${s.P>0?s.P+' pts':''}</div><div class="c" style="width:${100-pp}%">${s.C>0?s.C+' pts':''}</div></div><p class="muted"><strong>${v}</strong> A favor: ${s.P} pts (${s.np} argumentos). En contra: ${s.C} pts (${s.nc} argumentos).</p>`;
+  }
+  $('matrix').innerHTML=QUADS.map((q,i)=>{
+    const items=S.q[i].split('\n').filter(l=>l.trim());
+    return`<div class="quad q${i}"><h3>${q[0]}</h3>${items.length?items.map(x=>`<span class="chip">${esc(x.trim())}</span>`).join(''):'<small>Sin factores</small>'}</div>`;
+  }).join('');
+  histList();
+}
+function histList(){
+  $('hist').innerHTML=hist.length?hist.map((h,i)=>`<li><span><strong>${esc(h.title||'Sin nombre')}</strong><br><small class="muted">${esc(h.date)}</small></span><span><button class="btn ghost" onclick="openH(${i})">Abrir</button> <button class="x" aria-label="Borrar" onclick="delH(${i})">✕</button></span></li>`).join(''):'<li class="muted">Aún no has guardado ninguna decisión.</li>';
+}
+function commit(){
+  S.date=new Date().toLocaleString('es-ES');
+  const i=hist.findIndex(h=>h.id===S.id),copy=JSON.parse(JSON.stringify(S));
+  if(i>=0)hist[i]=copy;else hist.unshift(copy);
+  ls('dt:hist',hist);save();histList();
+}
+function openH(i){S=JSON.parse(JSON.stringify(hist[i]));save();fill();go(4)}
+function delH(i){hist.splice(i,1);ls('dt:hist',hist);histList()}
+function fresh(){S=blank();save();fill();go(0)}
+function fill(){$('title').value=S.title;$('ctx').value=S.context;$('final').value=S.final;risks();quads();lists()}
+function exp(){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify({draft:S,history:hist},null,2)],{type:'application/json'}));
+  a.download='decisiones.json';a.click();URL.revokeObjectURL(a.href);
+}
+function imp(inp){
+  const f=inp.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{
+    const d=JSON.parse(r.result);
+    (d.history||[]).forEach(h=>{if(h&&h.id&&!hist.some(x=>x.id===h.id))hist.push(h)});
+    ls('dt:hist',hist);histList();
+  }catch(e){alert('No se pudo leer el archivo. Comprueba que sea un JSON exportado desde esta herramienta.')}};
+  r.readAsText(f);inp.value='';
+}
+fill();go(0);
+</script>
+</body>
+</html>
